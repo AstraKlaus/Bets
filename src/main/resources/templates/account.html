@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личный кабинет</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <h1>Личный кабинет</h1>
+    <a href="/dashboard" class="btn btn-primary">Live-вилки</a>
+  </div>
+
+  <!-- Информация о пользователе -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h3>Информация о пользователе</h3>
+    </div>
+    <div class="card-body">
+      <p><strong>Имя пользователя:</strong> <span th:text="${user.username}">Username</span></p>
+      <p><strong>Роль:</strong> <span th:text="${user.role}">User</span></p>
+      <p><strong>Подписка:</strong>
+        <span th:if="${user.subscription != null}" th:text="${user.subscription.endDate}">Активна до</span>
+        <span th:if="${user.subscription == null}">Нет активной подписки</span>
+      </p>
+      <p th:if="${user.subscription != null}">
+        <strong>Срок действия:</strong> <span th:text="${user.subscription.endDate}">31.12.2024</span>
+      </p>
+      <button class="btn btn-success" th:if="${user.subscription == null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Оформить подписку</button>
+      <button class="btn btn-warning" th:if="${user.subscription != null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Продлить подписку</button>
+    </div>
+  </div>
+
+  <!-- Модальное окно для оформления подписки -->
+  <div class="modal fade" id="subscriptionModal" tabindex="-1" aria-labelledby="subscriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="subscriptionModalLabel">Оформить подписку</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Сообщение об ошибке, если оно есть -->
+          <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+          <form th:action="@{/admin/subscribe}" method="post" onsubmit="return validateSubscriptionDates()">
+            <input type="hidden" id="subscriptionUsername" name="username" th:value="${user.username}"/>
+            <div class="mb-3">
+              <label for="subscriptionStartDate" class="form-label">Дата начала</label>
+              <input type="date" class="form-control" id="subscriptionStartDate" name="startDate" required>
+            </div>
+            <div class="mb-3">
+              <label for="subscriptionEndDate" class="form-label">Дата окончания</label>
+              <input type="date" class="form-control" id="subscriptionEndDate" name="endDate" required>
+            </div>
+            <div class="alert alert-danger d-none" id="dateError">Дата окончания должна быть позже даты начала.</div>
+            <button type="submit" class="btn btn-success">Подтвердить</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Модальное окно для продления подписки -->
+  <div class="modal fade" id="extendModal" tabindex="-1" aria-labelledby="extendModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="extendModalLabel">Продлить подписку</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form th:action="@{/extend-subscription}" method="post">
+            <input type="hidden" id="extendUserId" name="userId"/>
+            <div class="mb-3">
+              <label for="extendPrice" class="form-label">Цена продления</label>
+              <input type="number" class="form-control" id="extendPrice" name="price" step="0.01" required>
+            </div>
+            <button type="submit" class="btn btn-warning">Продлить</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Таблица для администратора -->
+  <div th:if="${user.role == 'ADMIN'}">
+    <h2>Управление пользователями</h2>
+    <table class="table table-striped">
+      <thead>
+      <tr>
+        <th>Имя пользователя</th>
+        <th>Роль</th>
+        <th>Подписка</th>
+        <th>Действие</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="user : ${users}">
+        <td th:text="${user.username}">exampleuser</td>
+        <td th:text="${user.role}">USER</td>
+        <td>
+          <span th:if="${user.subscription != null}" th:text="${user.subscription.endDate}">Активна до</span>
+          <span th:if="${user.subscription == null}">Нет подписки</span>
+        </td>
+        <td>
+          <button class="btn btn-primary" th:if="${user.subscription == null}"
+                  th:data-username="${user.username}" onclick="openAdminSubscribeModal(this.dataset.username);">Выдать подписку</button>
+
+          <form th:if="${user.subscription != null}" th:action="@{/admin/cancel-subscription/{username}(username=${user.username})}" method="post">
+            <button type="submit" class="btn btn-danger" th:if="${user.subscription.status == true}">Отменить подписку</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script>
+  function openAdminSubscribeModal(username) {
+    console.log("Opening modal for user:", username);
+    // Установить значение в скрытое поле
+    document.getElementById('subscriptionUsername').value = username;
+
+    // Показать модальное окно
+    var myModal = new bootstrap.Modal(document.getElementById('subscriptionModal'));
+    myModal.show();
+  }
+
+  function validateSubscriptionDates() {
+    var startDate = document.getElementById("subscriptionStartDate").value;
+    var endDate = document.getElementById("subscriptionEndDate").value;
+    var dateError = document.getElementById("dateError");
+
+    if (startDate && endDate && startDate >= endDate) {
+      dateError.classList.remove("d-none"); // Показать ошибку
+      return false; // Отменить отправку формы
+    }
+
+    dateError.classList.add("d-none"); // Скрыть ошибку
+    return true; // Разрешить отправку формы
+  }
+
+  function openExtendModal() {
+    // Открытие модального окна для продления подписки
+    const extendModal = new bootstrap.Modal(document.getElementById('extendModal'));
+    extendModal.show();
+  }
+</script>
+</body>
+</html>

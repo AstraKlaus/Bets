@@ -1,0 +1,13 @@
+server:
+  port: 8084
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bets
+    username: postgres
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update  # Автоматическое обновление схемы БД
+    show-sql: true  # Показывать SQL-запросы в консоли
+  thymeleaf:
+    cache: false  # Отключить кеширование шаблонов (для разработки)
