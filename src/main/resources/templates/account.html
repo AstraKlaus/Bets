@@ -31,9 +31,25 @@
       </p>
       <button class="btn btn-success" th:if="${user.subscription == null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Оформить подписку</button>
       <button class="btn btn-warning" th:if="${user.subscription != null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Продлить подписку</button>
-    </div>
-  </div>
+      <div th:if="${user.role == 'ADMIN'}">
+        <h2>Управление парсером</h2>
+        <!-- Кнопка, которая меняет состояние в зависимости от статуса парсера -->
+        <form th:action="@{/subscriptions/controlParser}" method="post">
+          <!-- Скрытое поле для передачи параметра action -->
+          <input type="hidden" name="action" th:value="${parserStatus == 'running' ? '0' : '1'}" />
 
+          <button type="submit" class="btn btn-info"
+                  th:text="${parserStatus == 'running' ? 'Остановить парсер' : 'Запустить парсер'}">
+          </button>
+        </form>
+      </div>
+    </div>
+
+
+
+
+
+  </div>
   <!-- Модальное окно для оформления подписки -->
   <div class="modal fade" id="subscriptionModal" tabindex="-1" aria-labelledby="subscriptionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -124,6 +140,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script>
   function openAdminSubscribeModal(username) {
     console.log("Opening modal for user:", username);
@@ -154,6 +171,7 @@
     const extendModal = new bootstrap.Modal(document.getElementById('extendModal'));
     extendModal.show();
   }
+
 </script>
 </body>
 </html>

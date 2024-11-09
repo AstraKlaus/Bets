@@ -4,25 +4,23 @@ import ak.spring.models.Person;
 import ak.spring.models.Subscription;
 import ak.spring.services.PersonService;
 import ak.spring.services.SubscriptionService;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
+
     private final PersonService personService;
     private final SubscriptionService subscriptionService;
-
-    public AdminController(PersonService personService, SubscriptionService subscriptionService) {
+    public AdminController(PersonService personService, SubscriptionService subscriptionService
+                           ) {
         this.personService = personService;
-
         this.subscriptionService = subscriptionService;
     }
 
@@ -69,5 +67,6 @@ public class AdminController {
         // Перенаправляем на страницу с пользователями или отображаем успешное сообщение
         return "redirect:/subscriptions/account";
     }
+
 }
 

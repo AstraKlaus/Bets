@@ -4,12 +4,14 @@ import ak.spring.models.Person;
 import ak.spring.models.Subscription;
 import ak.spring.services.PersonService;
 import ak.spring.services.SubscriptionService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,10 +23,14 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
     private final PersonService personService;
+    private final RestTemplate restTemplate;
 
-    public SubscriptionController(SubscriptionService subscriptionService, PersonService personService) {
+    private boolean isParserRunning = true;
+
+    public SubscriptionController(SubscriptionService subscriptionService, PersonService personService, RestTemplate restTemplate) {
         this.subscriptionService = subscriptionService;
         this.personService = personService;
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping("/account")
@@ -35,6 +41,7 @@ public class SubscriptionController {
         // Получаем информацию о подписке
         Optional<Subscription> subscription = subscriptionService.getSubscriptionByPerson(person);  // Здесь нужно получить подписку пользователя из сервиса или репозитория
         model.addAttribute("user", person);
+        model.addAttribute("parserStatus", isParserRunning ? "running" : "stopped");
         if (subscription.isPresent()) {
             model.addAttribute("subscription", subscription.get());
         } else {
@@ -48,6 +55,21 @@ public class SubscriptionController {
         }
 
         return "account";
+    }
+
+    @PostMapping("/controlParser")
+    public String controlParser(@RequestParam String action) {
+        // Адрес Python сервера
+        String pythonServerUrl = "http://localhost:8082"; // Убедитесь, что Python сервер работает на этом порту
+
+        if ("0".equals(action)) {
+            isParserRunning = false; // Остановить парсер
+        } else if ("1".equals(action)) {
+            isParserRunning = true; // Запустить парсер
+        }
+        String response = restTemplate.postForObject(pythonServerUrl, action, String.class);
+
+        return "redirect:account";
     }
 
     // Показать информацию о подписке текущего пользователя

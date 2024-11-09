@@ -67,15 +67,14 @@
             <button id="stopButton" class="btn btn-custom mb-3">
                 <span th:text='${sendingData ? "Остановить обновление" : "Продолжить обновление"}'></span>
             </button>
+            <button id="deleteAllButton" class="btn btn-danger mb-3">Удалить все</button>
             <table class="table table-custom table-hover">
                 <thead>
                 <tr>
-                    <th scope="col" class="text-center"></th>
-                    <th scope="col" class="text-center">Процент</th>
-                    <th scope="col" class="text-center">Контора</th>
                     <th scope="col" class="text-center">Событие</th>
+                    <th scope="col" class="text-center">Контора</th>
                     <th scope="col" class="text-center">Коэф</th>
-                    <th scope="col" class="text-center">Ставка</th>
+                    <th scope="col" class="text-center">Время</th>
                     <th scope="col" class="text-center">Удалить</th> <!-- Новый столбец для удаления -->
                 </tr>
                 </thead>
@@ -124,27 +123,10 @@
         const newRow = document.createElement('tr');
 
         newRow.innerHTML = `
-            <th scope="row" class="text-center">${bet.game}</th>
-            <td class="text-center">${bet.percentage.toFixed(2)}</td>
-            <td>
-                <ul class="list-unstyled text-center">
-                    <li>${bet.bookmakers[0]}</li>
-                    <li>${bet.bookmakers[1]}</li>
-                </ul>
-            </td>
-            <td>
-                <ul class="list-unstyled text-center">
-                    <li>${bet.events[0]}</li>
-                    <li>${bet.events[1]}</li>
-                </ul>
-            </td>
-            <td>
-                <ul class="list-unstyled text-center">
-                    <li>${bet.odds[0].toFixed(2)}</li>
-                    <li>${bet.odds[1].toFixed(2)}</li>
-                </ul>
-            </td>
-            <td class="text-center">${bet.bet}</td>
+            <td class="text-center">${bet.event}</td>
+            <td class="text-center">${bet.bookmaker}</td>
+            <td class="text-center">${bet.ratio}</td>
+            <td class="text-center">${bet.time}</td>
             <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteBet(this)"></i></td> <!-- Иконка мусорной корзины -->
         `;
 
@@ -155,6 +137,12 @@
     function deleteBet(element) {
         const row = element.closest('tr'); // Находим родительскую строку
         row.remove(); // Удаляем строку
+    }
+
+    function deleteAllBets() {
+        const tableBody = document.getElementById('bettingTableBody');
+        tableBody.innerHTML = ''; // Очистка таблицы
+        localStorage.removeItem('bets'); // Очистка localStorage
     }
 
     // Функция для сохранения ставки в localStorage
@@ -192,6 +180,8 @@
         }
         updateButtonText(); // Обновляем текст кнопки
     });
+
+    document.getElementById('deleteAllButton').addEventListener('click', deleteAllBets);
 </script>
 </body>
 </html>
