@@ -1,11 +1,14 @@
 package ak.spring.controllers;
 
+import ak.spring.models.Person;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,9 +51,25 @@ public class WebSocketDataController {
     @SendTo("/topic/bets")
     public Map<String, Object> receiveBetFromPython(@Payload Map<String, Object> bet) {
         System.out.println("Received bet: " + bet);
-        bets.add(0, bet); // Сохраняем полученную ставку в список (опционально)
-        return bet;       // Отправляем ставку всем подписчикам
+
+        // Проверяем, есть ли уже ставка с таким же событием
+        boolean exists = false;
+        for (Map<String, Object> existingBet : bets) {
+            if (existingBet.get("event").equals(bet.get("event")) && bet.get("bet").equals(bet.get("bet"))) { // сравнение по полю event
+                existingBet.putAll(bet); // Обновляем данные существующей ставки
+                exists = true;
+                break;
+            }
+        }
+
+        // Если ставка с таким событием не найдена, добавляем новую
+        if (!exists) {
+            bets.add(0, bet); // Добавляем в начало списка
+        }
+
+        return bet; // Отправляем ставку всем подписчикам
     }
+
 
     @MessageMapping("/stopParser")
     public void stopParser() {

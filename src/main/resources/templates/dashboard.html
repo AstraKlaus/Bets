@@ -74,12 +74,11 @@
                     <th scope="col" class="text-center">Событие</th>
                     <th scope="col" class="text-center">Контора</th>
                     <th scope="col" class="text-center">Коэф</th>
-                    <th scope="col" class="text-center">Время</th>
-                    <th scope="col" class="text-center">Удалить</th> <!-- Новый столбец для удаления -->
+                    <th scope="col" class="text-center">Ставка</th>
+                    <th scope="col" class="text-center">Удалить</th>
                 </tr>
                 </thead>
                 <tbody id="bettingTableBody">
-                <!-- Новые ставки будут добавляться сюда -->
                 </tbody>
             </table>
         </div>
@@ -120,18 +119,37 @@
     // Функция для добавления ставки в таблицу
     function addBetToTable(bet) {
         const tableBody = document.getElementById('bettingTableBody');
-        const newRow = document.createElement('tr');
+        let existingRow = null;
 
-        newRow.innerHTML = `
+        // Проверяем, есть ли уже строка с таким событием
+        for (const row of tableBody.rows) {
+            if (row.cells[0].innerText === bet.event) { // Сравнение по полю event
+                existingRow = row;
+                break;
+            }
+        }
+
+        if (existingRow) {
+            // Обновляем данные существующей строки
+            existingRow.cells[1].innerText = bet.bookmaker;
+            existingRow.cells[2].innerText = bet.ratio;
+            existingRow.cells[3].innerText = bet.bet;
+        } else {
+            // Если не найдена строка с таким событием, добавляем новую
+            const newRow = document.createElement('tr');
+
+            newRow.innerHTML = `
             <td class="text-center">${bet.event}</td>
             <td class="text-center">${bet.bookmaker}</td>
             <td class="text-center">${bet.ratio}</td>
-            <td class="text-center">${bet.time}</td>
-            <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteBet(this)"></i></td> <!-- Иконка мусорной корзины -->
+            <td class="text-center">${bet.bet}</td>
+            <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteBet(this)"></i></td>
         `;
 
-        tableBody.prepend(newRow); // Добавляем новую строку в начало таблицы
+            tableBody.prepend(newRow); // Добавляем новую строку в начало таблицы
+        }
     }
+
 
     // Функция для удаления ставки из таблицы
     function deleteBet(element) {
@@ -147,11 +165,22 @@
 
     // Функция для сохранения ставки в localStorage
     function saveBetToLocalStorage(bet) {
-        // Получаем текущие ставки из localStorage
         let bets = JSON.parse(localStorage.getItem('bets')) || [];
-        bets.unshift(bet); // Добавляем новую ставку в начало массива
-        localStorage.setItem('bets', JSON.stringify(bets)); // Сохраняем обновленный массив
+
+        // Найти индекс существующей ставки с таким же событием
+        const existingIndex = bets.findIndex(item => item.event === bet.event);
+
+        if (existingIndex !== -1) {
+            // Обновить существующую ставку
+            bets[existingIndex] = bet;
+        } else {
+            // Добавить новую ставку в начало массива
+            bets.unshift(bet);
+        }
+
+        localStorage.setItem('bets', JSON.stringify(bets));
     }
+
 
     // Функция для загрузки ставок из localStorage
     function loadBetsFromLocalStorage() {

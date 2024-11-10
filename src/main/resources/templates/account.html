@@ -12,6 +12,9 @@
   <div class="d-flex justify-content-between align-items-center">
     <h1>Личный кабинет</h1>
     <a href="/dashboard" class="btn btn-primary">Live-вилки</a>
+    <form th:action="@{/logout}" th:method="POST">
+      <input class="btn btn-warning" type="submit" value="Выйти" />
+    </form>
   </div>
 
   <!-- Информация о пользователе -->
@@ -20,35 +23,34 @@
       <h3>Информация о пользователе</h3>
     </div>
     <div class="card-body">
-      <p><strong>Имя пользователя:</strong> <span th:text="${user.username}">Username</span></p>
-      <p><strong>Роль:</strong> <span th:text="${user.role}">User</span></p>
-      <p><strong>Подписка:</strong>
-        <span th:if="${user.subscription != null}" th:text="${user.subscription.endDate}">Активна до</span>
-        <span th:if="${user.subscription == null}">Нет активной подписки</span>
-      </p>
-      <p th:if="${user.subscription != null}">
-        <strong>Срок действия:</strong> <span th:text="${user.subscription.endDate}">31.12.2024</span>
-      </p>
-      <button class="btn btn-success" th:if="${user.subscription == null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Оформить подписку</button>
-      <button class="btn btn-warning" th:if="${user.subscription != null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Продлить подписку</button>
-      <div th:if="${user.role == 'ADMIN'}">
-        <h2>Управление парсером</h2>
-        <!-- Кнопка, которая меняет состояние в зависимости от статуса парсера -->
-        <form th:action="@{/subscriptions/controlParser}" method="post">
-          <!-- Скрытое поле для передачи параметра action -->
-          <input type="hidden" name="action" th:value="${parserStatus == 'running' ? '0' : '1'}" />
+      <div class="row">
+        <!-- Левая половина с информацией о пользователе -->
+        <div class="col-md-6">
+          <p><strong>Имя пользователя:</strong> <span th:text="${user.username}">Username</span></p>
+          <p><strong>Роль:</strong> <span th:text="${user.role}">User</span></p>
+          <p><strong>Подписка:</strong>
+            <span th:if="${user.subscription != null}" th:text="${user.subscription.endDate}">Активна до</span>
+            <span th:if="${user.subscription == null}">Нет активной подписки</span>
+          </p>
+          <p th:if="${user.subscription != null}">
+            <strong>Срок действия:</strong> <span th:text="${user.subscription.endDate}">31.12.2024</span>
+          </p>
+          <button class="btn btn-success" th:if="${user.subscription == null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Оформить подписку</button>
+          <button class="btn btn-warning" th:if="${user.subscription != null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Продлить подписку</button>
+        </div>
 
-          <button type="submit" class="btn btn-info"
-                  th:text="${parserStatus == 'running' ? 'Остановить парсер' : 'Запустить парсер'}">
-          </button>
-        </form>
+        <!-- Правая половина с управлением парсером (только для ADMIN) -->
+        <div class="col-md-6" th:if="${user.role == 'ADMIN'}">
+          <h4>Управление парсером</h4>
+          <form th:action="@{/subscriptions/controlParser}" method="post">
+            <input type="hidden" name="action" th:value="${parserStatus == 'running' ? '0' : '1'}" />
+            <button type="submit" class="btn btn-info"
+                    th:text="${parserStatus == 'running' ? 'Остановить парсер' : 'Запустить парсер'}">
+            </button>
+          </form>
+        </div>
       </div>
     </div>
-
-
-
-
-
   </div>
   <!-- Модальное окно для оформления подписки -->
   <div class="modal fade" id="subscriptionModal" tabindex="-1" aria-labelledby="subscriptionModalLabel" aria-hidden="true">
