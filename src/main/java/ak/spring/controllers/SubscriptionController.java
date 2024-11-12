@@ -25,7 +25,7 @@ public class SubscriptionController {
     private final PersonService personService;
     private final RestTemplate restTemplate;
 
-    private boolean isParserRunning = true;
+    private boolean isParserRunning = false;
 
     public SubscriptionController(SubscriptionService subscriptionService, PersonService personService, RestTemplate restTemplate) {
         this.subscriptionService = subscriptionService;

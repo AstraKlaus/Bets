@@ -58,7 +58,7 @@
 </head>
 <body>
 <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex gap-2 justify-content-between align-items-center">
         <h1>Live-вилки</h1>
         <a href="/subscriptions/account" class="btn btn-primary">Личный кабинет</a>
     </div>
@@ -93,6 +93,8 @@
 
     // Загружаем состояние isUpdating из localStorage или устанавливаем по умолчанию
     let isUpdating = JSON.parse(sessionStorage.getItem('isUpdating')) || false;
+    let hiddenEvents = JSON.parse(localStorage.getItem('hiddenEvents')) || []; // Скрытые события пользователя
+
 
     // Обновляем текст кнопки в зависимости от состояния
     function updateButtonText() {
@@ -108,12 +110,16 @@
             console.log('Connected: ' + frame);
             stompClient.subscribe('/topic/bets', function (message) {
                 const bet = JSON.parse(message.body);
-                if (isUpdating) {
+                if (isUpdating && !isEventHidden(bet.event)) { // Проверяем, скрыто ли событие
                     addBetToTable(bet);
                     saveBetToLocalStorage(bet);
                 }
             });
         });
+    }
+
+    function isEventHidden(eventName) {
+        return hiddenEvents.includes(eventName);
     }
 
     // Функция для добавления ставки в таблицу
@@ -143,7 +149,7 @@
             <td class="text-center">${bet.bookmaker}</td>
             <td class="text-center">${bet.ratio}</td>
             <td class="text-center">${bet.bet}</td>
-            <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteBet(this)"></i></td>
+            <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteBet(this, '${bet.event}')"></i></td>
         `;
 
             tableBody.prepend(newRow); // Добавляем новую строку в начало таблицы
@@ -152,9 +158,14 @@
 
 
     // Функция для удаления ставки из таблицы
-    function deleteBet(element) {
+    function deleteBet(element, eventName) {
         const row = element.closest('tr'); // Находим родительскую строку
         row.remove(); // Удаляем строку
+
+        if (!hiddenEvents.includes(eventName)) {
+            hiddenEvents.push(eventName);
+            localStorage.setItem('hiddenEvents', JSON.stringify(hiddenEvents));
+        }
     }
 
     function deleteAllBets() {
