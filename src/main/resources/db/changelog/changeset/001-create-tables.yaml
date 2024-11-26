@@ -4,6 +4,39 @@ databaseChangeLog:
       author: admin
       changes:
         - createTable:
+            tableName: subscription
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: start_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date
+                  type: DATE
+                  constraints:
+                    nullable: true
+              - column:
+                  name: price
+                  type: DOUBLE PRECISION
+                  constraints:
+                    nullable: true
+              - column:
+                  name: status
+                  type: BOOLEAN
+                  constraints:
+                    nullable: true
+  - changeSet:
+      id: 2
+      author: admin
+      changes:
+        - createTable:
             tableName: person
             columns:
               - column:
@@ -36,37 +69,3 @@ databaseChangeLog:
             constraintName: fk_person_subscription
             referencedTableName: subscription
             referencedColumnNames: id
-
-  - changeSet:
-      id: 2
-      author: admin
-      changes:
-        - createTable:
-            tableName: subscription
-            columns:
-              - column:
-                  name: id
-                  type: BIGINT
-                  autoIncrement: true
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: start_date
-                  type: DATE
-                  constraints:
-                    nullable: false
-              - column:
-                  name: end_date
-                  type: DATE
-                  constraints:
-                    nullable: true
-              - column:
-                  name: price
-                  type: DOUBLE PRECISION
-                  constraints:
-                    nullable: true
-              - column:
-                  name: status
-                  type: BOOLEAN
-                  constraints:
-                    nullable: true

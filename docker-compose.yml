@@ -1,4 +1,4 @@
-version: '4.0'
+version: '3.8'
 
 services:
   postgres:
@@ -6,33 +6,33 @@ services:
     container_name: bets-db
     environment:
       POSTGRES_DB: bets
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
-    ports:
-      - "5432:5432"
+    env_file:
+      - .env
 
-  springboot-app:
-    build: ./
+  spring-bet-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: spring-bet-app
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/bets
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 1234
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bets-db:5432/bets
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_LIQUIBASE_CHANGELOG: classpath:db/changelog/db.changelog-master.yaml
-    ports:
-      - "8084:8084"
     networks:
       - app-network
+    ports:
+      - "443:443"
     volumes:
       - ./db/changelog:/app/db/changelog
       - ./logs:/app/logs
+      - /etc/letsencrypt:/etc/letsencrypt
     restart: on-failure
 
 networks:

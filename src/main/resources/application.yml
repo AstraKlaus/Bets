@@ -1,13 +1,45 @@
 server:
-  port: 8084
+  port: 443
+  ssl:
+    enabled: true
+    key-store: keystore.p12
+    key-store-password: Baa_020303
+    key-store-type: PKCS12
+
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/bets
-    username: postgres
-    password: 1234
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://bets-db:5432/bets
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 30000
+      max-lifetime: 1800000
   jpa:
-    hibernate:
-      ddl-auto: update  # Автоматическое обновление схемы БД
-    show-sql: true  # Показывать SQL-запросы в консоли
-  thymeleaf:
-    cache: false  # Отключить кеширование шаблонов (для разработки)
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        enable_lazy_load_no_trans: true
+        show_sql: true
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+
+logging:
+  file:
+    path: /app/logs
+  level:
+    root: info
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

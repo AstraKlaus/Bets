@@ -1,46 +1,48 @@
 package ak.spring.controllers;
 
 import ak.spring.models.Person;
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
+import ak.spring.services.PersonService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.ui.Model;
 import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketHandler;
-import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.client.WebSocketClient;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 
-@CrossOrigin(origins = "ws://localhost:8084")
+
+@CrossOrigin(origins = "wss://blbet.fun")
 @Controller
 public class WebSocketDataController {
 
     private WebSocketSession pythonSession;
+    private final PersonService personService;
 
     private final List<Map<String, Object>> bets = new ArrayList<>();
     private boolean isUpdating = true;
 
-    @Autowired
-    public WebSocketDataController(SimpMessagingTemplate messagingTemplate) {
+
+    public WebSocketDataController(SimpMessagingTemplate messagingTemplate, PersonService personService) {
+        this.personService = personService;
     }
 
     @GetMapping("/dashboard")
-    public String showDashboard(Model model) {
+    public String showDashboard(Model model, HttpServletResponse response, Principal principal) {
+        Person person = personService.findByUsername(principal.getName());
+
+        if (person == null || person.getSubscription() == null || !person.getSubscription().isActive()) {
+            return "redirect:/subscriptions/account"; // Перенаправление на страницу подписок
+        }
         model.addAttribute("bets", bets); // Передаем текущие ставки в модель
         model.addAttribute("sendingData", isUpdating); // Передаем состояние флага в модель
         return "dashboard";
@@ -49,26 +51,16 @@ public class WebSocketDataController {
     // Прием сообщений от Python-сервера
     @MessageMapping("/receiveBet")
     @SendTo("/topic/bets")
-    public Map<String, Object> receiveBetFromPython(@Payload Map<String, Object> bet) {
-        System.out.println("Received bet: " + bet);
+    public List<Map<String, Object>> receiveBetsFromPython(@Payload List<Map<String, Object>> newBets) {
+        System.out.println("Received bets: " + newBets);
 
-        // Проверяем, есть ли уже ставка с таким же событием
-        boolean exists = false;
-        for (Map<String, Object> existingBet : bets) {
-            if (existingBet.get("event").equals(bet.get("event")) && bet.get("bet").equals(bet.get("bet"))) { // сравнение по полю event
-                existingBet.putAll(bet); // Обновляем данные существующей ставки
-                exists = true;
-                break;
-            }
-        }
+        // Очищаем текущий список ставок и добавляем новые
+        bets.clear();
+        bets.addAll(newBets);
 
-        // Если ставка с таким событием не найдена, добавляем новую
-        if (!exists) {
-            bets.add(0, bet); // Добавляем в начало списка
-        }
-
-        return bet; // Отправляем ставку всем подписчикам
+        return bets; // Отправляем обновленный список ставок всем подписчикам
     }
+
 
 
     @MessageMapping("/stopParser")

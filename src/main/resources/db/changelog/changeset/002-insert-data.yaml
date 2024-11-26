@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 4
+      id: 3
       author: admin
       changes:
         - insert:
@@ -23,7 +23,7 @@ databaseChangeLog:
                   valueBoolean: true
 
   - changeSet:
-      id: 5
+      id: 4
       author: admin
       changes:
         - insert:
@@ -34,16 +34,13 @@ databaseChangeLog:
                   valueNumeric: 1
               - column:
                   name: username
-                  value: admin
+                  value: "admin"
               - column:
                   name: password
-                  value: admin_password_hash  # Замените на хэш пароля администратора
+                  value: "$2a$10$V0W1mW2xigiI7PjUmjt0VeiNDfdi.D5KmDHkTHvrruR.ObVWso58K"
               - column:
                   name: role
-                  value: ADMIN
+                  value: "ADMIN"
               - column:
                   name: subscription_id
                   valueNumeric: 1
-
-
-  

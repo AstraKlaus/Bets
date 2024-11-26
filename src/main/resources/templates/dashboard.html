@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Betting Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Подключение Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Стили для улучшенной таблицы */
         .table-custom {
             border: 2px solid #007bff;
             border-radius: 8px;
             overflow: hidden;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* Для плавной прокрутки на мобильных устройствах */
         }
         .table-custom th, .table-custom td {
             border: 1px solid #007bff; /* Цвет рамки ячеек */
@@ -54,12 +58,17 @@
         .delete-btn:hover {
             color: darkred; /* Изменение цвета при наведении */
         }
+        @media (max-width: 576px) {
+            .card-body {
+                padding: 1rem; /* Уменьшает отступы внутри карточки на маленьких экранах */
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container mt-5">
-    <div class="d-flex gap-2 justify-content-between align-items-center">
-        <h1>Live-вилки</h1>
+    <div class="d-flex gap-2 justify-content-between align-items-center flex-wrap">
+        <h1 class="mb-3 mb-md-0">Live-ставки</h1>
         <a href="/subscriptions/account" class="btn btn-primary">Личный кабинет</a>
     </div>
     <div class="card shadow-lg">
@@ -67,161 +76,144 @@
             <button id="stopButton" class="btn btn-custom mb-3">
                 <span th:text='${sendingData ? "Остановить обновление" : "Продолжить обновление"}'></span>
             </button>
-            <button id="deleteAllButton" class="btn btn-danger mb-3">Удалить все</button>
-            <table class="table table-custom table-hover">
-                <thead>
-                <tr>
-                    <th scope="col" class="text-center">Событие</th>
-                    <th scope="col" class="text-center">Контора</th>
-                    <th scope="col" class="text-center">Коэф</th>
-                    <th scope="col" class="text-center">Ставка</th>
-                    <th scope="col" class="text-center">Удалить</th>
-                </tr>
-                </thead>
-                <tbody id="bettingTableBody">
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-custom table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col" class="text-center">Событие</th>
+                        <th scope="col" class="text-center">Контора</th>
+                        <th scope="col" class="text-center">Коэф</th>
+                        <th scope="col" class="text-center">Ставка</th>
+                        <th scope="col" class="text-center">Удалить</th>
+                    </tr>
+                    </thead>
+                    <tbody id="bettingTableBody">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script>
     let stompClient = null;
+    let isUpdating = false;
+    let hiddenEvents = [];
 
-    // Загружаем состояние isUpdating из localStorage или устанавливаем по умолчанию
-    let isUpdating = JSON.parse(sessionStorage.getItem('isUpdating')) || false;
-    let hiddenEvents = JSON.parse(localStorage.getItem('hiddenEvents')) || []; // Скрытые события пользователя
+    try {
+        isUpdating = JSON.parse(sessionStorage.getItem('isUpdating')) || false;
+    } catch (e) {
+        console.error('Ошибка чтения isUpdating из sessionStorage:', e);
+    }
 
+    try {
+        hiddenEvents = JSON.parse(localStorage.getItem('hiddenEvents')) || [];
+    } catch (e) {
+        console.error('Ошибка чтения hiddenEvents из localStorage:', e);
+    }
 
-    // Обновляем текст кнопки в зависимости от состояния
     function updateButtonText() {
         const button = document.getElementById('stopButton');
-        button.querySelector('span').innerText = isUpdating ? "Остановить обновление" : "Продолжить обновление";
-    }
-
-    // Функция для подключения к WebSocket
-    function connect() {
-        const socket = new SockJS('/ws'); // Замените '/ws' на ваш путь
-        stompClient = Stomp.over(socket);
-        stompClient.connect({}, function (frame) {
-            console.log('Connected: ' + frame);
-            stompClient.subscribe('/topic/bets', function (message) {
-                const bet = JSON.parse(message.body);
-                if (isUpdating && !isEventHidden(bet.event)) { // Проверяем, скрыто ли событие
-                    addBetToTable(bet);
-                    saveBetToLocalStorage(bet);
-                }
-            });
-        });
-    }
-
-    function isEventHidden(eventName) {
-        return hiddenEvents.includes(eventName);
-    }
-
-    // Функция для добавления ставки в таблицу
-    function addBetToTable(bet) {
-        const tableBody = document.getElementById('bettingTableBody');
-        let existingRow = null;
-
-        // Проверяем, есть ли уже строка с таким событием
-        for (const row of tableBody.rows) {
-            if (row.cells[0].innerText === bet.event) { // Сравнение по полю event
-                existingRow = row;
-                break;
-            }
-        }
-
-        if (existingRow) {
-            // Обновляем данные существующей строки
-            existingRow.cells[1].innerText = bet.bookmaker;
-            existingRow.cells[2].innerText = bet.ratio;
-            existingRow.cells[3].innerText = bet.bet;
+        if (button) {
+            button.querySelector('span').innerText = isUpdating ? "Остановить обновление" : "Продолжить обновление";
         } else {
-            // Если не найдена строка с таким событием, добавляем новую
-            const newRow = document.createElement('tr');
-
-            newRow.innerHTML = `
-            <td class="text-center">${bet.event}</td>
-            <td class="text-center">${bet.bookmaker}</td>
-            <td class="text-center">${bet.ratio}</td>
-            <td class="text-center">${bet.bet}</td>
-            <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteBet(this, '${bet.event}')"></i></td>
-        `;
-
-            tableBody.prepend(newRow); // Добавляем новую строку в начало таблицы
+            console.warn('Кнопка stopButton не найдена.');
         }
     }
 
+    function isEventHidden(event) {
+        return hiddenEvents.includes(event);
+    }
 
-    // Функция для удаления ставки из таблицы
-    function deleteBet(element, eventName) {
-        const row = element.closest('tr'); // Находим родительскую строку
-        row.remove(); // Удаляем строку
+    function loadBetsFromLocalStorage() {
+        const bets = JSON.parse(localStorage.getItem('bets')) || [];
+        bets.forEach(addBetToTable);
+    }
 
-        if (!hiddenEvents.includes(eventName)) {
-            hiddenEvents.push(eventName);
+    function deleteBet(element, event) {
+        // Удаляем строку из таблицы
+        const row = element.closest('tr');
+        if (row) {
+            row.remove();
+        }
+        // Добавляем событие в список скрытых
+        if (!hiddenEvents.includes(event)) {
+            hiddenEvents.push(event);
             localStorage.setItem('hiddenEvents', JSON.stringify(hiddenEvents));
         }
     }
 
-    function deleteAllBets() {
-        const tableBody = document.getElementById('bettingTableBody');
-        tableBody.innerHTML = ''; // Очистка таблицы
-        localStorage.removeItem('bets'); // Очистка localStorage
-    }
+    function connect() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
 
-    // Функция для сохранения ставки в localStorage
-    function saveBetToLocalStorage(bet) {
-        let bets = JSON.parse(localStorage.getItem('bets')) || [];
-
-        // Найти индекс существующей ставки с таким же событием
-        const existingIndex = bets.findIndex(item => item.event === bet.event);
-
-        if (existingIndex !== -1) {
-            // Обновить существующую ставку
-            bets[existingIndex] = bet;
-        } else {
-            // Добавить новую ставку в начало массива
-            bets.unshift(bet);
-        }
-
-        localStorage.setItem('bets', JSON.stringify(bets));
-    }
-
-
-    // Функция для загрузки ставок из localStorage
-    function loadBetsFromLocalStorage() {
-        const storedBets = JSON.parse(localStorage.getItem('bets'));
-        if (storedBets) {
-            // Обратный порядок добавления, чтобы последние элементы шли первыми
-            storedBets.reverse().forEach(bet => {
-                addBetToTable(bet); // Добавляем каждую ставку в таблицу
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/bets', function (message) {
+                try {
+                    const bets = JSON.parse(message.body);
+                    if (Array.isArray(bets)) {
+                        if (isUpdating) {
+                            clearBetTable();
+                            const visibleBets = bets.filter(bet => !isEventHidden(bet.event));
+                            visibleBets.forEach(addBetToTable);
+                            localStorage.setItem('bets', JSON.stringify(visibleBets));
+                        }
+                    }
+                } catch (e) {
+                    console.error('Ошибка обработки сообщения WebSocket:', e);
+                }
             });
+        }, function (error) {
+            console.error('Ошибка соединения с WebSocket:', error);
+        });
+
+        socket.onclose = function (event) {
+            console.warn('WebSocket закрыт:', event);
+        };
+
+        socket.onerror = function (error) {
+            console.error('Ошибка WebSocket:', error);
+        };
+    }
+
+    function clearBetTable() {
+        const tableBody = document.getElementById('bettingTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = '';
         }
     }
 
-    // Запускаем соединение
-    connect();
-    loadBetsFromLocalStorage(); // Загружаем ставки из localStorage при загрузке страницы
-    updateButtonText(); // Устанавливаем текст кнопки при загрузке
-
-    // Обработчик для кнопки остановки обновления
-    document.getElementById('stopButton').addEventListener('click', () => {
-        isUpdating = !isUpdating; // Меняем флаг на противоположный
-        sessionStorage.setItem('isUpdating', JSON.stringify(isUpdating)); // Сохраняем состояние
-        if (isUpdating) {
-            stompClient.send('/app/startUpdates'); // Отправляем команду на сервер для продолжения обновления
-        } else {
-            stompClient.send('/app/stopUpdates'); // Отправляем команду на сервер для остановки обновления
+    function addBetToTable(bet) {
+        const tableBody = document.getElementById('bettingTableBody');
+        if (tableBody) {
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td class="text-center">${bet.event}</td>
+                <td class="text-center">${bet.bookmaker}</td>
+                <td class="text-center">${bet.ratio}</td>
+                <td class="text-center">${bet.bet}</td>
+                <td class="text-center"><i class="fas fa-trash delete-btn" onclick="deleteBet(this, '${bet.event}')"></i></td>
+            `;
+            tableBody.appendChild(newRow);
         }
-        updateButtonText(); // Обновляем текст кнопки
-    });
+    }
 
-    document.getElementById('deleteAllButton').addEventListener('click', deleteAllBets);
+    connect();
+    loadBetsFromLocalStorage();
+    updateButtonText();
+
+    document.getElementById('stopButton').addEventListener('click', () => {
+        isUpdating = !isUpdating;
+        sessionStorage.setItem('isUpdating', JSON.stringify(isUpdating));
+        updateButtonText();
+    });
 </script>
+
+
 </body>
 </html>

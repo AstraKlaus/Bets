@@ -5,17 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Личный кабинет</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    .pencil-btn {
+      cursor: pointer; /* Указатель при наведении */
+      color: #0d6efd; /* Цвет иконки */
+      font-size: 1.75rem; /* Увеличенный размер иконки */
+      width: 100%; /* Ширина ячейки */
+      height: 100%; /* Высота ячейки */
+      text-align: left; /* Центрирование текста */
+      display: flex; /* Flexbox для центрирования */
+      align-items: center; /* Вертикальное центрирование */
+      justify-content: left; /* Горизонтальное центрирование */
+    }
+    .pencil-btn:hover {
+      color: #0a53be; /* Изменение цвета при наведении */
+    }
+  </style>
 </head>
 <body>
 
 <div class="container mt-4">
-  <div class="d-flex align-items-center">
+  <div class="d-flex align-items-center justify-content-between">
     <h1>Личный кабинет</h1>
-    <a href="/dashboard" class="btn btn-primary">Live-вилки</a>
-    <form th:action="@{/logout}" th:method="POST">
-      <input class="btn btn-warning" type="submit" value="Выйти" />
-    </form>
+    <div class="d-flex">
+      <a href="/dashboard" class="btn btn-primary me-2">Live-ставки</a>
+      <form th:action="@{/logout}" th:method="POST">
+        <input class="btn btn-danger" type="submit" value="Выйти" />
+      </form>
+    </div>
   </div>
+
 
   <!-- Информация о пользователе -->
   <div class="card mb-4">
@@ -35,20 +55,29 @@
           <p th:if="${user.subscription != null}">
             <strong>Срок действия:</strong> <span th:text="${user.subscription.endDate}">31.12.2024</span>
           </p>
-          <button class="btn btn-success" th:if="${user.subscription == null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Оформить подписку</button>
-          <button class="btn btn-warning" th:if="${user.subscription != null}" th:onclick="'window.open(\'https://t.me/werqty65\', \'_blank\')'">Продлить подписку</button>
+          <button class="btn btn-warning" th:if="${user.subscription == null}" th:onclick="'window.open(\'https://t.me/KalmykovG\', \'_blank\')'">Оформить подписку</button>
+          <button class="btn btn-success" th:if="${user.subscription != null}" th:onclick="'window.open(\'https://t.me/KalmykovG\', \'_blank\')'">Продлить подписку</button>
         </div>
 
         <!-- Правая половина с управлением парсером (только для ADMIN) -->
         <div class="col-md-6" th:if="${user.role == 'ADMIN'}">
           <h4>Управление парсером</h4>
-          <form th:action="@{/subscriptions/controlParser}" method="post">
+          <form th:action="@{/subscriptions/controlParser}" method="post" class="mb-3">
             <input type="hidden" name="action" th:value="${parserStatus == 'running' ? '0' : '1'}" />
-            <button type="submit" class="btn btn-info"
+            <button type="submit" class="btn btn-warning"
                     th:text="${parserStatus == 'running' ? 'Остановить парсер' : 'Запустить парсер'}">
             </button>
+            <div class="col-md-12 mb-3">
+              <div th:if="${message}" class="alert alert-success" role="alert">
+                <span th:text="${message}"></span>
+              </div>
+              <div th:if="${error}" class="alert alert-danger" role="alert">
+                <span th:text="${error}"></span>
+              </div>
+            </div>
           </form>
         </div>
+
       </div>
     </div>
   </div>
@@ -116,6 +145,7 @@
         <th>Роль</th>
         <th>Подписка</th>
         <th>Действие</th>
+        <th>Редактирование</th>
       </tr>
       </thead>
       <tbody>
@@ -128,17 +158,66 @@
         </td>
         <td>
           <button class="btn btn-primary" th:if="${user.subscription == null}"
-                  th:data-username="${user.username}" onclick="openAdminSubscribeModal(this.dataset.username);">Выдать подписку</button>
-
-          <form th:if="${user.subscription != null}" th:action="@{/admin/cancel-subscription/{username}(username=${user.username})}" method="post">
-            <button type="submit" class="btn btn-danger" th:if="${user.subscription.status == true}">Отменить подписку</button>
+                  th:data-username="${user.username}" onclick="openAdminSubscribeModal(this.dataset.username);">
+            Выдать подписку
+          </button>
+          <form th:if="${user.subscription != null}"
+                th:action="@{/admin/cancel-subscription/{username}(username=${user.username})}" method="post">
+            <button type="submit" class="btn btn-danger" th:if="${user.subscription.status == true}">
+              Отменить подписку
+            </button>
           </form>
+        </td>
+        <td>
+          <i class="fa fa-pencil pencil-btn" style="cursor: pointer;"
+             data-bs-toggle="modal" data-bs-target="#editUserModal"
+             th:data-id="${user.id}" th:data-username="${user.username}" th:data-role="${user.role}"
+             onclick="openEditUserModal(this.dataset);">
+          </i>
         </td>
       </tr>
       </tbody>
     </table>
   </div>
+
+
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form th:action="@{/admin/edit-user}" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editUserModalLabel">Редактировать пользователя</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editUserId" name="id"/>
+            <div class="mb-3">
+              <label for="editUsername" class="form-label">Имя пользователя</label>
+              <input type="text" class="form-control" id="editUsername" name="username" readonly/>
+            </div>
+            <div class="mb-3">
+              <label for="editRole" class="form-label">Роль</label>
+              <select class="form-select" id="editRole" name="role">
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="editPassword" class="form-label">Пароль</label>
+              <input type="password" class="form-control" id="editPassword" name="password" placeholder="Оставьте пустым, чтобы не менять"/>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
@@ -172,6 +251,13 @@
     // Открытие модального окна для продления подписки
     const extendModal = new bootstrap.Modal(document.getElementById('extendModal'));
     extendModal.show();
+  }
+
+  function openEditUserModal(data) {
+    document.getElementById('editUserId').value = data.id;
+    document.getElementById('editUsername').value = data.username;
+    document.getElementById('editRole').value = data.role;
+    document.getElementById('editPassword').value = ''; // Очищаем поле пароля
   }
 
 </script>

@@ -18,6 +18,7 @@ public class AdminController {
 
     private final PersonService personService;
     private final SubscriptionService subscriptionService;
+
     public AdminController(PersonService personService, SubscriptionService subscriptionService
                            ) {
         this.personService = personService;
@@ -68,5 +69,11 @@ public class AdminController {
         return "redirect:/subscriptions/account";
     }
 
+    @PostMapping("/edit-user")
+    public String editUser(@ModelAttribute("person") Person person, @RequestParam("password") String password) {
+        // Обновление пользователя в базе данных
+        personService.updateUser(person, password);
+        return "redirect:/account"; // Перенаправление на страницу управления пользователями
+    }
 }
 

@@ -1,5 +1,6 @@
 package ak.spring.services;
 
+import ak.spring.exceptions.ResourceNotFoundException;
 import ak.spring.models.Person;
 import ak.spring.repositories.PersonRepository;
 import ak.spring.models.Subscription;
@@ -39,24 +40,20 @@ public class PersonService {
     }
 
     // Обновить информацию о пользователе
-    public Person updateUser(Person updatedPerson) {
-        Optional<Person> existingPersonOpt = personRepository.findById(updatedPerson.getId());
+    public void updateUser(Person updatedPerson, String newPassword) {
+        Person existingPerson = personRepository.findById(updatedPerson.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Person", "id", updatedPerson.getId()));
 
-        if (existingPersonOpt.isPresent()) {
-            Person existingPerson = existingPersonOpt.get();
-            existingPerson.setUsername(updatedPerson.getUsername());
-            existingPerson.setPassword(passwordEncoder.encode(updatedPerson.getPassword()));
-            existingPerson.setRole(updatedPerson.getRole());
-            existingPerson.setSubscription(updatedPerson.getSubscription());
-            return personRepository.save(existingPerson);
-        } else {
-            throw new RuntimeException("Пользователь не найден");
+        // Обновляем роль пользователя
+        existingPerson.setRole(updatedPerson.getRole());
+
+        // Если пароль передан, шифруем его и обновляем
+        if (newPassword != null && !newPassword.isEmpty()) {
+            existingPerson.setPassword(passwordEncoder.encode(newPassword));
         }
-    }
 
-    // Удалить пользователя по ID
-    public void deleteUser(Long id) {
-        personRepository.deleteById(id);
+        // Сохраняем обновления
+        personRepository.save(existingPerson);
     }
 
     // Назначить подписку пользователю

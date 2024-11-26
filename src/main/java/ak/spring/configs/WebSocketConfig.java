@@ -12,13 +12,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");  // Канал, на который будет отправляться сообщение
+        config.enableSimpleBroker("/topic"); // Канал, на который будет отправляться сообщение
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("*").withSockJS(); // WebSocket endpoint
+        registry.addEndpoint("/ws")
+                .setAllowedOrigins("http://213.139.210.44",
+                        "https://blbet.fun",
+                        "https://213.139.210.44",
+                        "https://blbet.fun/ws/**",
+                        "wss://blbet.fun")
+                .withSockJS();
+
     }
 
 

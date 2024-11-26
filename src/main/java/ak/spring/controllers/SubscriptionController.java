@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -58,19 +59,32 @@ public class SubscriptionController {
     }
 
     @PostMapping("/controlParser")
-    public String controlParser(@RequestParam String action) {
+    public String controlParser(@RequestParam String action, Model model, RedirectAttributes redirectAttributes) {
         // Адрес Python сервера
-        String pythonServerUrl = "http://localhost:8082"; // Убедитесь, что Python сервер работает на этом порту
+        String pythonServerUrl = "http://213.139.210.44:8082";
 
-        if ("0".equals(action)) {
-            isParserRunning = false; // Остановить парсер
-        } else if ("1".equals(action)) {
-            isParserRunning = true; // Запустить парсер
+        try {
+            // Обновление статуса парсера
+            if ("0".equals(action)) {
+                isParserRunning = false; // Остановить парсер
+            } else if ("1".equals(action)) {
+                isParserRunning = true; // Запустить парсер
+            }
+
+            // Отправка запроса на Python сервер
+            String response = restTemplate.postForObject(pythonServerUrl, action, String.class);
+            redirectAttributes.addFlashAttribute("message", "Парсер успешно обновлен: " + response);
+        } catch (Exception e) {
+            // Логирование ошибки
+            System.err.println("Ошибка при подключении к Python серверу: " + e.getMessage());
+
+            // Сообщение для администратора
+            redirectAttributes.addFlashAttribute("error", "Не удалось подключиться к серверу парсера. Проверьте его доступность.");
         }
-        String response = restTemplate.postForObject(pythonServerUrl, action, String.class);
 
-        return "redirect:account";
+        return "redirect:/subscriptions/account"; // Перенаправление обратно на страницу
     }
+
 
     // Показать информацию о подписке текущего пользователя
     @GetMapping("/my")

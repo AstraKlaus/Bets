@@ -7,8 +7,7 @@ WORKDIR /app
 # Копируем файл с билдом приложения (JAR-файл) в контейнер
 COPY target/Bets-1.0-SNAPSHOT.jar bets-app.jar
 
-# Открываем порт, который будет использовать Spring Boot
-EXPOSE 8084
+EXPOSE 443
 
 # Команда для запуска приложения
 ENTRYPOINT ["java", "-jar", "bets-app.jar"]
