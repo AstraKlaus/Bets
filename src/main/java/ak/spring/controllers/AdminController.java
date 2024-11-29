@@ -73,7 +73,7 @@ public class AdminController {
     public String editUser(@ModelAttribute("person") Person person, @RequestParam("password") String password) {
         // Обновление пользователя в базе данных
         personService.updateUser(person, password);
-        return "redirect:/account"; // Перенаправление на страницу управления пользователями
+        return "redirect:/subscriptions/account"; // Перенаправление на страницу управления пользователями
     }
 }
 

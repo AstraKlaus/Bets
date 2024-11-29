@@ -66,4 +66,5 @@ public class AuthController {
     public String redirectToDashboard() {
         return "redirect:/dashboard";
     }
+
 }

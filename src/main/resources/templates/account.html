@@ -61,22 +61,25 @@
 
         <!-- Правая половина с управлением парсером (только для ADMIN) -->
         <div class="col-md-6" th:if="${user.role == 'ADMIN'}">
-          <h4>Управление парсером</h4>
-          <form th:action="@{/subscriptions/controlParser}" method="post" class="mb-3">
+          <h4 class="mb-4">Управление парсером</h4>
+          <form th:action="@{/subscriptions/controlParser}" method="post" class="mb-4">
             <input type="hidden" name="action" th:value="${parserStatus == 'running' ? '0' : '1'}" />
-            <button type="submit" class="btn btn-warning"
-                    th:text="${parserStatus == 'running' ? 'Остановить парсер' : 'Запустить парсер'}">
+            <button type="submit" class="btn btn-warning mb-3"
+            th:text="${parserStatus == 'running' ? 'Остановить парсер' : 'Запустить парсер'}">
             </button>
-            <div class="col-md-12 mb-3">
-              <div th:if="${message}" class="alert alert-success" role="alert">
+            <div class="col-md-12">
+              <!-- Сообщение об успешном обновлении -->
+              <div th:if="${message}" class="alert alert-success mb-3" role="alert">
                 <span th:text="${message}"></span>
               </div>
-              <div th:if="${error}" class="alert alert-danger" role="alert">
+              <!-- Сообщение об ошибке -->
+              <div th:if="${error}" class="alert alert-danger mb-3" role="alert">
                 <span th:text="${error}"></span>
               </div>
             </div>
           </form>
         </div>
+
 
       </div>
     </div>
@@ -259,6 +262,7 @@
     document.getElementById('editRole').value = data.role;
     document.getElementById('editPassword').value = ''; // Очищаем поле пароля
   }
+
 
 </script>
 </body>

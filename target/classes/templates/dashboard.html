@@ -150,7 +150,6 @@
     function connect() {
         const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
-
         stompClient.connect({}, function (frame) {
             console.log('Connected: ' + frame);
             stompClient.subscribe('/topic/bets', function (message) {
@@ -212,6 +211,7 @@
         sessionStorage.setItem('isUpdating', JSON.stringify(isUpdating));
         updateButtonText();
     });
+
 </script>
 
 

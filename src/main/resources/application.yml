@@ -1,5 +1,8 @@
 server:
   port: 443
+  servlet:
+    session:
+      timeout: 15m
   ssl:
     enabled: true
     key-store: keystore.p12
@@ -37,6 +40,7 @@ logging:
     path: /app/logs
   level:
     root: info
+    org.springframework.security: debug
 
 springdoc:
   api-docs:
