@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,6 +30,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public SessionAuthenticationStrategy customSessionAuthenticationStrategy() {
+        return new CustomSessionAuthenticationStrategy(sessionRegistry());
+    }
+
+    @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
     }
@@ -36,12 +42,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**","/logout"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**","/logout", "/heartbeat"))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/login", "/register","/ws/**", "/logout").permitAll()
+                        .requestMatchers("/login", "/register","/ws/**", "/logout","/heartbeat").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
+                        .sessionAuthenticationStrategy(customSessionAuthenticationStrategy())
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(true)
                         .sessionRegistry(sessionRegistry())
